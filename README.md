@@ -14,10 +14,7 @@ _Create a site or blog from your GitHub repositories with GitHub Pages._
 </header>
 <body>
     <h1>Welcome to the Home Page!</h1>
-    <div class="links-container">
         <a href="https://www.bejson.com/" target="_blank">JSON</a>
         <a href="https://lanhuapp.com/link/#/invite?sid=lx64OBE7" target="_blank">蓝湖</a>
         <a href="https://note.youdao.com/web" target="_blank">有道云</a>
-
-    </div>
 </body>
