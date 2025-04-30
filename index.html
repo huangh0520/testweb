@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page - Your Digital Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-size: cover;
+            background-position: center;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            padding: 20px 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+      .links-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        a:hover {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        /* 为每个链接设置不同颜色 */
+        a:nth-child(1) {
+            color: #ff6347; /* 西红柿色 */
+        }
+
+        a:nth-child(2) {
+            color: #87ceeb; /* 天蓝色 */
+        }
+
+        a:nth-child(3) {
+            color: #9370db; /* 淡紫色 */
+        }
+
+        a:nth-child(4) {
+            color: #228b22; /* 森林绿 */
+        }
+
+        a:nth-child(5) {
+            color: #ffd700; /* 金色 */
+        }
+
+        a:nth-child(6) {
+            color: #ffa500; /* 橙色 */
+        }
+
+        a:nth-child(7) {
+            color: #4169e1; /* 皇家蓝 */
+        }
+
+        a:nth-child(8) {
+            color: #ff1493; /* 深粉色 */
+        }
+
+        a:nth-child(9) {
+            color: #00ced1; /* 深青色 */
+        }
+
+        a:nth-child(10) {
+            color: #ff4500; /* 橘红色 */
+        }
+
+        a:nth-child(11) {
+            color: #7b68ee; /* 中紫色 */
+        }
+
+        a:nth-child(12) {
+            color: #008080; /* 暗青色 */
+        }
+		a:nth-child(13) {
+            color: #turquoise; /* 青绿色 */
+        }
+		a:nth-child(14) {
+            color: #khaki; /* 卡其色 */
+        }
+    </style>
+    <script>
+        // 随机选择一张背景图片
+        const images = [
+            "image1.jpg",
+            "image2.jpg",
+            "image3.jpg"
+        ];
+        const randomImage = images[Math.floor(Math.random() * images.length)];
+        document.body.style.backgroundImage = `url(${randomImage})`;
+    </script>
+</head>
+
+<body>
+    <h1>Welcome to the Home Page!</h1>
+    <div class="links-container">
+		<a href="http://publish.bjmama.com/k8s/test/apply/history/?keyword=" target="_blank">发布系统</a>
+        <a href="https://www.bejson.com/" target="_blank">JSON</a>
+        <a href="https://pregnancy.corp.mama.cn/Mmqadmin/login/index" target="_blank">孕育</a>
+        <a href="http://testlink.corp.mama.cn/login.php" target="_blank">testlink</a>
+        <a href="http://prototype.corp.mama.cn/pt_v3/" target="_blank">需求原型</a>
+        <a href="http://yapi.mama.cn/" target="_blank">接口文档</a>
+        <a href="https://jira.corp.mama.cn/secure/Dashboard.jspa?selectPageId=10403" target="_blank">jira</a>
+        <a href="https://member.corp.mama.cn/index/main" target="_blank">用户中心，mama.cn.43@</a>
+        <a href="https://acl.mama.cn/Platform/accessList.html" target="_blank">ACL 后台</a>
+        <a href="https://wiki.corp.mama.cn/pages/viewpage.action?pageId=146015603" target="_blank">wiki</a>
+        <a href="https://lanhuapp.com/link/#/invite?sid=lx64OBE7" target="_blank">蓝湖</a>
+        <a href="http://switchhosts.corp.mama.cn/host/k8s/test.txt" target="_blank">测试环境</a>
+        <a href="https://www.mamagoods.cn/admin/index.php#order.php?act=list" target="_blank">小树熊</a>
+		<a href="http://console.push.mama.cn/" target="_blank">push</a>
+		<a href="http://kibana.corp.mama.cn/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-12h,mode:quick,to:now))&_a=(columns:!(msg),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:cd53d2a0-b10c-11ed-b04b-57abdaed4f60,key:request_body,negate:!f,params:(query:uid%3D127879886,type:phrase),type:phrase,value:uid%3D127879886),query:(match:(request_body:(query:uid%3D127879886,type:phrase))))),index:cd53d2a0-b10c-11ed-b04b-57abdaed4f60,interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))" target="_blank">kibana</a>
+        <a href="https://note.youdao.com/web" target="_blank">有道云</a>
+
+    </div>
+</body>
+
+</html>
+</html>
