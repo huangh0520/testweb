@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金收益快速估算器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        /* 计算器主体 */
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 输入区域样式 */
+        .input-section, .result-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .input-section h2, .result-section h2 {
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .default-tag {
+            background: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .required {
+            color: #dc3545;
+            margin-left: 4px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 按钮样式 */
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* 结果区域样式 */
+        .result-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .placeholder-content i {
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+
+        .result-summary {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .result-summary.profit {
+            border-left: 5px solid #28a745;
+        }
+
+        .result-summary.loss {
+            border-left: 5px solid #dc3545;
+        }
+
+        .result-summary.neutral {
+            border-left: 5px solid #ffc107;
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .net-return {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .text-profit {
+            color: #28a745;
+        }
+
+        .text-loss {
+            color: #dc3545;
+        }
+
+        .return-rate {
+            font-size: 1rem;
+            background: #f8f9fa;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        /* 结果详情样式 */
+        .result-details {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .detail-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .detail-label {
+            color: #555;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* 参数显示样式 */
+        .result-parameters {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .result-parameters h4 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .param-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .param-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .param-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* 使用说明样式 */
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 0 30px 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instruction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .instruction-item i {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        /* 页脚样式 */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-chart-line"></i> 基金收益快速估算器</h1>
+            <p class="subtitle">快速计算基金投资收益，支持默认值：投资金额10万元，持有30天，费率0%</p>
+        </header>
+
+        <div class="calculator-wrapper">
+            <!-- 左侧：输入表单 -->
+            <div class="input-section">
+                <h2><i class="fas fa-edit"></i> 输入投资参数</h2>
+                
+                <form id="fundForm">
+                    <div class="form-group">
+                        <label for="buy_amount">
+                            <i class="fas fa-money-bill-wave"></i> 投资金额（元）
+                            <span class="default-tag">默认 100,000 元</span>
+                        </label>
+                        <input type="number" 
+                               id="buy_amount" 
+                               name="buy_amount" 
+                               step="1000"
+                               min="0" 
+                               placeholder="100000"
+                               value="100000">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="buy_nav">
+                                <i class="fas fa-arrow-up"></i> 买入净值
+                                <span class="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   id="buy_nav" 
+                                   name="buy_nav" 
+                                   step="0.000001"
+                                   min="0.000001" 
+                                   placeholder="1.500000"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sell_nav">
+                                <i class="fas fa-arrow-down"></i> 卖出净值
+                                <span class="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   id="sell_nav" 
+                                   name="sell_nav" 
+                                   step="0.000001"
+                                   min="0.000001" 
+                                   placeholder="1.600000"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchase_rate">
+                                <i class="fas fa-percentage"></i> 申购费率（%）
+                                <span class="default-tag">默认 0%</span>
+                            </label>
+                            <input type="number" 
+                                   id="purchase_rate" 
+                                   name="purchase_rate" 
+                                   step="0.01"
+                                   min="0" 
+                                   max="10"
+                                   placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="redemption_rate">
+                                <i class="fas fa-percentage"></i> 赎回费率（%）
+                                <span class="default-tag">默认 0%</span>
+                            </label>
+                            <input type="number" 
+                                   id="redemption_rate" 
+                                   name="redemption_rate" 
+                                   step="0.01"
+                                   min="0" 
+                                   max="10"
+                                   placeholder="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="holding_days">
+                            <i class="fas fa-calendar-alt"></i> 持有天数
+                            <span class="default-tag">默认 30 天</span>
+                        </label>
+                        <input type="number" 
+                               id="holding_days" 
+                               name="holding_days" 
+                               min="1" 
+                               placeholder="30"
+                               value="30">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="calculateBtn" class="btn btn-primary">
+                            <i class="fas fa-calculator"></i> 立即计算
+                        </button>
+                        <button type="button" id="resetBtn" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> 重置表单
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 右侧：结果显示 -->
+            <div class="result-section" id="resultSection">
+                <h2><i class="fas fa-chart-bar"></i> 计算结果</h2>
+                
+                <div class="result-placeholder" id="resultPlaceholder">
+                    <div class="placeholder-content">
+                        <i class="fas fa-calculator fa-3x"></i>
+                        <p>输入参数后点击"立即计算"查看结果</p>
+                    </div>
+                </div>
+
+                <div class="result-content" id="resultContent" style="display: none;">
+                    <!-- 结果内容将通过JavaScript动态填充 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加使用说明部分 -->
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
+            <div class="instruction-grid">
+                <div class="instruction-item">
+                    <i class="fas fa-edit"></i>
+                    <span>填写买入净值和卖出净值，其他参数可使用默认值</span>
+                </div>
+                <div class="instruction-item">
+                    <i class="fas fa-calculator"></i>
+                    <span>点击"立即计算"按钮查看详细收益分析</span>
+                </div>
+                <div class="instruction-item">
+                    <i class="fas fa-redo"></i>
+                    <span>点击"重置表单"可恢复默认设置</span>
+                </div>
+                <div class="instruction-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>结果包含年化收益率、日均收益等详细数据</span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>© 2024 基金收益计算器 | 纯静态网页版本 | 可在GitHub Pages部署</p>
+        </footer>
+    </div>
+
+    <script>
+        // 默认值配置
+        const DEFAULTS = {
+            investment: 100000,
+            purchase_rate: 0,
+            redemption_rate: 0,
+            holding_days: 30
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const fundForm = document.getElementById('fundForm');
+            const resultContent = document.getElementById('resultContent');
+            const resultPlaceholder = document.getElementById('resultPlaceholder');
+            const resultSection = document.getElementById('resultSection');
+
+            // 计算基金收益
+            function calculateFundReturns(formData) {
+                // 解析输入值
+                const buyAmount = parseFloat(formData.buy_amount) || DEFAULTS.investment;
+                const buyNav = parseFloat(formData.buy_nav);
+                const sellNav = parseFloat(formData.sell_nav);
+                const purchaseRate = (parseFloat(formData.purchase_rate) || DEFAULTS.purchase_rate) / 100;
+                const redemptionRate = (parseFloat(formData.redemption_rate) || DEFAULTS.redemption_rate) / 100;
+                const holdingDays = parseInt(formData.holding_days) || DEFAULTS.holding_days;
+                
+                // 计算申购费用
+                const purchaseFee = buyAmount * purchaseRate;
+                const actualPurchaseAmount = buyAmount - purchaseFee;
+                
+                // 计算持有份额
+                const shares = actualPurchaseAmount / buyNav;
+                
+                // 计算赎回总额
+                const totalRedemptionBeforeFee = shares * sellNav;
+                
+                // 计算赎回费用
+                const redemptionFee = totalRedemptionBeforeFee * redemptionRate;
+                
+                // 计算最终赎回金额
+                const totalRedemption = totalRedemptionBeforeFee - redemptionFee;
+                
+                // 计算净收益
+                const netReturn = totalRedemption - buyAmount;
+                
+                // 计算总收益率
+                const totalReturnRate = (netReturn / buyAmount) * 100;
+                
+                // 计算年化收益率
+                const annualizedReturn = totalReturnRate * (365 / holdingDays);
+                
+                // 计算日均收益
+                const dailyReturn = netReturn / holdingDays;
+                
+                // 计算保本净值
+                const breakEvenNav = (buyAmount + purchaseFee + redemptionFee) / shares;
+                
+                // 判断是否高于保本点
+                const aboveBreakEven = sellNav > breakEvenNav;
+                
+                // 判断盈亏状态
+                const isProfit = netReturn > 0;
+                const isLoss = netReturn < 0;
+                const isNeutral = netReturn === 0;
+                
+                return {
+                    buy_amount: buyAmount,
+                    buy_nav: buyNav,
+                    sell_nav: sellNav,
+                    purchase_rate: purchaseRate * 100,
+                    redemption_rate: redemptionRate * 100,
+                    holding_days: holdingDays,
+                    purchase_fee: purchaseFee,
+                    redemption_fee: redemptionFee,
+                    shares: shares,
+                    total_redemption: totalRedemption,
+                    net_return: netReturn,
+                    total_return_rate: totalReturnRate,
+                    annualized_return: annualizedReturn,
+                    daily_return: dailyReturn,
+                    break_even_nav: breakEvenNav,
+                    above_break_even: aboveBreakEven,
+                    is_profit: isProfit,
+                    is_loss: isLoss,
+                    is_neutral: isNeutral
+                };
+            }
+
+            // 计算按钮点击事件
+            calculateBtn.addEventListener('click', function() {
+                // 收集表单数据
+                const formData = {
+                    buy_amount: document.getElementById('buy_amount').value,
+                    buy_nav: document.getElementById('buy_nav').value,
+                    purchase_rate: document.getElementById('purchase_rate').value,
+                    sell_nav: document.getElementById('sell_nav').value,
+                    redemption_rate: document.getElementById('redemption_rate').value,
+                    holding_days: document.getElementById('holding_days').value
+                };
+
+                // 验证必填字段
+                if (!formData.buy_nav || !formData.sell_nav) {
+                    alert('请输入买入净值和卖出净值');
+                    return;
+                }
+
+                // 验证数值有效性
+                if (parseFloat(formData.buy_nav) <= 0 || parseFloat(formData.sell_nav) <= 0) {
+                    alert('净值必须大于0');
+                    return;
+                }
+
+                // 执行计算
+                try {
+                    const result = calculateFundReturns(formData);
+                    displayResults(result);
+                } catch (error) {
+                    console.error('计算错误:', error);
+                    alert('计算错误，请检查输入值是否有效');
+                }
+            });
+
+            // 重置按钮点击事件
+            resetBtn.addEventListener('click', function() {
+                fundForm.reset();
+                document.getElementById('buy_amount').value = DEFAULTS.investment;
+                document.getElementById('holding_days').value = DEFAULTS.holding_days;
+                hideResults();
+            });
+
+            // 显示计算结果
+            function displayResults(data) {
+                // 隐藏占位符，显示结果
+                resultPlaceholder.style.display = 'none';
+                resultContent.style.display = 'block';
+                
+                // 格式化金额
+                const formatCurrency = (num) => {
+                    return new Intl.NumberFormat('zh-CN', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(num);
+                };
+                
+                // 格式化百分比
+                const formatPercent = (num) => {
+                    return num.toFixed(2) + '%';
+                };
+                
+                // 生成HTML内容
+                const html = `
+                    <div class="result-summary ${data.is_profit ? 'profit' : data.is_loss ? 'loss' : 'neutral'}">
+                        <div class="summary-header">
+                            <h3>
+                                ${data.is_profit ? '📈 盈利状态' : data.is_loss ? '📉 亏损状态' : '⚖️ 盈亏平衡'}
+                            </h3>
+                            <div class="net-return ${data.is_profit ? 'text-profit' : data.is_loss ? 'text-loss' : ''}">
+                                ${data.is_profit ? '+' : ''}${formatCurrency(data.net_return)} 元
+                                <span class="return-rate">${formatPercent(data.total_return_rate)}</span>
+                            </div>
+                        </div>
+                        <p>基于投资 ${formatCurrency(data.buy_amount)} 元，持有 ${data.holding_days} 天</p>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-coins"></i> 持有份额
+                                </div>
+                                <div class="detail-value">${data.shares.toLocaleString('zh-CN', {maximumFractionDigits: 2})} 份</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-wallet"></i> 最终赎回金额
+                                </div>
+                                <div class="detail-value">${formatCurrency(data.total_redemption)} 元</div>
+                            </div>
+                            
+                            ${data.purchase_fee > 0 ? `
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-file-invoice-dollar"></i> 申购费用
+                                </div>
+                                <div class="detail-value">${formatCurrency(data.purchase_fee)} 元</div>
+                            </div>
+                            ` : ''}
+                            
+                            ${data.redemption_fee > 0 ? `
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-file-invoice-dollar"></i> 赎回费用
+                                </div>
+                                <div class="detail-value">${formatCurrency(data.redemption_fee)} 元</div>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-chart-line"></i> 年化收益率
+                                </div>
+                                <div class="detail-value ${data.annualized_return >= 0 ? 'text-profit' : 'text-loss'}">
+                                    ${data.annualized_return >= 0 ? '+' : ''}${formatPercent(data.annualized_return)}
+                                </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-day"></i> 日均收益
+                                </div>
+                                <div class="detail-value ${data.daily_return >= 0 ? 'text-profit' : 'text-loss'}">
+                                    ${data.daily_return >= 0 ? '+' : ''}${formatCurrency(data.daily_return)} 元/天
+                                </div>
+                            </div>
+                            
+                            ${data.break_even_nav > 0 ? `
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-balance-scale"></i> 保本净值
+                                </div>
+                                <div class="detail-value">${data.break_even_nav.toFixed(6)}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-chart-bar"></i> 保本状态
+                                </div>
+                                <div class="detail-value ${data.above_break_even ? 'text-profit' : 'text-loss'}">
+                                    ${data.above_break_even ? '✅ 高于保本点' : '❌ 低于保本点'}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="result-parameters">
+                        <h4><i class="fas fa-cogs"></i> 计算参数</h4>
+                        <div class="param-grid">
+                            <div class="param-item">
+                                <span class="param-label">投资金额</span>
+                                <span class="param-value">${formatCurrency(data.buy_amount)} 元</span>
+                            </div>
+                            <div class="param-item">
+                                <span class="param-label">买入净值</span>
+                                <span class="param-value">${data.buy_nav.toFixed(6)}</span>
+                            </div>
+                            <div class="param-item">
+                                <span class="param-label">卖出净值</span>
+                                <span class="param-value">${data.sell_nav.toFixed(6)}</span>
+                            </div>
+                            <div class="param-item">
+                                <span class="param-label">申购费率</span>
+                                <span class="param-value">${data.purchase_rate.toFixed(2)}%</span>
+                            </div>
+                            <div class="param-item">
+                                <span class="param-label">赎回费率</span>
+                                <span class="param-value">${data.redemption_rate.toFixed(2)}%</span>
+                            </div>
+                            <div class="param-item">
+                                <span class="param-label">持有天数</span>
+                                <span class="param-value">${data.holding_days} 天</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                resultContent.innerHTML = html;
+                
+                // 滚动到结果区域（移动端友好）
+                resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // 隐藏结果，显示占位符
+            function hideResults() {
+                resultPlaceholder.style.display = 'block';
+                resultContent.style.display = 'none';
+                resultContent.innerHTML = '';
+            }
+
+            // 初始隐藏结果
+            hideResults();
+            
+            // 示例：自动填充示例数据（可选）
+            function fillExampleData() {
+                document.getElementById('buy_nav').value = '1.500000';
+                document.getElementById('sell_nav').value = '1.600000';
+                // 可选：自动计算
+                // calculateBtn.click();
+            }
+            
+            // 取消自动填充示例数据，让用户手动输入
+            // fillExampleData();
+        });
+    </script>
+</body>
+</html>
