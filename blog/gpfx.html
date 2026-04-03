@@ -242,7 +242,7 @@
         <div class="input-group">
             <div class="input-field">
                 <label>🔍 股票代码 (沪/深A股)</label>
-                <input type="text" id="stockCodeInput" placeholder="例如: 002624 或 000001" value="002624" autocomplete="off">
+                <input type="text" id="stockCodeInput" placeholder="例如: 600036 或 000001" value="600036" autocomplete="off">
             </div>
             <button id="analyzeBtn">📊 开始分析</button>
         </div>
@@ -345,7 +345,7 @@
         return Math.round(value * factor) / factor;
     }
 
-    // 核心分析函数 (移除原有的summary四项，新增当天最高涨幅和当天最高跌幅)
+    // 核心分析函数 (包含当天最高涨幅、最高跌幅、收盘涨幅)
     function analyzeVolatility(klineList) {
         if (!klineList || klineList.length < 2) {
             throw new Error('交易日数量不足2天，无法计算波动');
@@ -356,16 +356,15 @@
         const lastHigh = lastRecord.high;
         const lastLow = lastRecord.low;
         
-        // 计算当天最高涨幅和当天最高跌幅 (基于前一日收盘价)
+        // 计算当天最高涨幅、最高跌幅、收盘涨幅 (基于前一日收盘价)
         const prevClose = klineList[totalDays - 2].close;
-        let dailyHighRise = null;
-        let dailyLowFall = null;
+        let dailyHighRise = 0;
+        let dailyLowFall = 0;
+        let dailyCloseRise = 0;
         if (prevClose !== 0 && !isNaN(prevClose)) {
             dailyHighRise = ((lastHigh - prevClose) / prevClose) * 100;
-            dailyLowFall = ((lastLow - prevClose) / prevClose) * 100; // 负值，展示时取绝对值或显示负号
-        } else {
-            dailyHighRise = 0;
-            dailyLowFall = 0;
+            dailyLowFall = ((lastLow - prevClose) / prevClose) * 100; // 负值表示下跌
+            dailyCloseRise = ((lastPrice - prevClose) / prevClose) * 100;
         }
         
         const hhDay = [];
@@ -430,17 +429,19 @@
             lastHigh: roundDecimal(lastHigh, 2),
             lastLow: roundDecimal(lastLow, 2),
             dailyHighRise: roundDecimal(dailyHighRise, 2),
-            dailyLowFall: roundDecimal(dailyLowFall, 2)  // 保留负值，显示时转为正数加“%”或负号
+            dailyLowFall: roundDecimal(dailyLowFall, 2),
+            dailyCloseRise: roundDecimal(dailyCloseRise, 2)
         };
     }
     
     function renderResults(stockCode, stockName, dataRange, analysisResult) {
-        const { highFreqResults, lowFreqResults, totalDays, lastPrice, lastHigh, lastLow, dailyHighRise, dailyLowFall } = analysisResult;
+        const { highFreqResults, lowFreqResults, totalDays, lastPrice, lastHigh, lastLow, dailyHighRise, dailyLowFall, dailyCloseRise } = analysisResult;
         const analysisDate = new Date().toLocaleString('zh-CN');
         
         // 处理跌幅显示 (负数转为正数并加上“下跌”标识)
         const displayLowFall = dailyLowFall < 0 ? (-dailyLowFall).toFixed(2) : dailyLowFall.toFixed(2);
         const lowFallSign = dailyLowFall < 0 ? '-' : '+';
+        const displayCloseRise = dailyCloseRise >= 0 ? `+${dailyCloseRise.toFixed(2)}` : `${dailyCloseRise.toFixed(2)}`;
         
         const summaryHtml = `
             <div class="summary-card"><div class="label">股票名称</div><div class="value">${escapeHtml(stockName)}</div><div class="unit">${stockCode}</div></div>
@@ -449,6 +450,7 @@
             <div class="summary-card"><div class="label">当日最低价</div><div class="value">¥${lastLow}</div><div class="unit">元</div></div>
             <div class="summary-card"><div class="label">当天最高涨幅</div><div class="value ${dailyHighRise >= 0 ? 'badge-positive' : 'badge-negative'}">${dailyHighRise >= 0 ? '+' : ''}${dailyHighRise}%</div><div class="unit">(较昨收)</div></div>
             <div class="summary-card"><div class="label">当天最高跌幅</div><div class="value ${dailyLowFall < 0 ? 'badge-negative' : 'badge-positive'}">${lowFallSign}${displayLowFall}%</div><div class="unit">(较昨收)</div></div>
+            <div class="summary-card"><div class="label">当天收盘涨幅</div><div class="value ${dailyCloseRise >= 0 ? 'badge-positive' : 'badge-negative'}">${displayCloseRise}%</div><div class="unit">(较昨收)</div></div>
             <div class="summary-card"><div class="label">分析交易日</div><div class="value">${totalDays}</div><div class="unit">天</div></div>
         `;
         document.getElementById('summaryArea').innerHTML = summaryHtml;
@@ -513,7 +515,7 @@
     async function analyzeStock(stockInput) {
         let rawCode = stockInput.trim();
         if (!/^\d{6}$/.test(rawCode)) {
-            throw new Error('股票代码必须是6位数字 (例如 002624, 000001)');
+            throw new Error('股票代码必须是6位数字 (例如 600036, 000001)');
         }
         const prefix = getMarketPrefix(rawCode);
         const fullCode = rawCode;
@@ -600,7 +602,7 @@
     
     window.addEventListener('load', () => {
         setTimeout(() => {
-            if (inputEl.value.trim() === '002624') {
+            if (inputEl.value.trim() === '600036') {
                 onAnalyze().catch(e => console.warn);
             }
         }, 200);
