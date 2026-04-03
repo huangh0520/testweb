@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>波动分析工具 - 高频涨幅 & 低频跌幅</title>
+    <title>股票波动分析工具 - 高频涨幅 & 低频跌幅</title>
     <style>
         * {
             box-sizing: border-box;
@@ -206,13 +206,6 @@
         tr:hover td {
             background-color: #fafcff;
         }
-        .badge-positive {
-            color: #15803d;
-            font-weight: 500;
-        }
-        .badge-negative {
-            color: #b91c1c;
-        }
         .footer-note {
             font-size: 0.7rem;
             text-align: center;
@@ -242,14 +235,14 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>📈 波动特征分析</h1>
+        <h1>📈 股票波动特征分析</h1>
         <p>高频涨幅(0.1%~1.0%) & 低频跌幅(1.0%~5.5%) | 基于真实历史日线数据</p>
     </div>
     <div class="search-panel">
         <div class="input-group">
             <div class="input-field">
-                <label>🔍 代码 (沪/深A股)</label>
-                <input type="text" id="stockCodeInput" placeholder="例如: 600036 或 000001" value="600036" autocomplete="off">
+                <label>🔍 股票代码 (沪/深A股)</label>
+                <input type="text" id="stockCodeInput" placeholder="例如: 002624 或 000001" value="002624" autocomplete="off">
             </div>
             <button id="analyzeBtn">📊 开始分析</button>
         </div>
@@ -258,7 +251,7 @@
 
     <div id="loadingIndicator" class="loading" style="display: none;">
         <div class="spinner"></div>
-        <span>正在获取数据并计算波动特征...</span>
+        <span>正在获取股票数据并计算波动特征...</span>
     </div>
 
     <div id="resultContainer" class="result-section">
@@ -298,17 +291,13 @@
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`名称接口HTTP ${response.status}`);
-            // 获取原始二进制数据并用GBK解码
             const buffer = await response.arrayBuffer();
             const decoder = new TextDecoder('gbk');
             const text = decoder.decode(buffer);
-            // 格式: v_sh600036="1~招商银行~600036~招商银行~..."  或 v_sz000001="1~平安银行~000001~..."
-            // 匹配第一个~和第二个~之间的内容
             const match = text.match(/="[^"]*?~([^~]+)~/);
             if (match && match[1]) {
                 return match[1].trim();
             }
-            // 降级尝试直接正则匹配名称
             const fallbackMatch = text.match(/~([^~]+)~/);
             return fallbackMatch ? fallbackMatch[1].trim() : code;
         } catch (err) {
@@ -329,7 +318,6 @@
         }
         const dayArr = json.data[symbol].day;
         if (!dayArr || dayArr.length === 0) throw new Error('该时间段无日线数据');
-        // dayArr 格式: [ ["日期","开盘","收盘","最高","最低","成交量","成交额"] ... ]
         const records = [];
         for (const item of dayArr) {
             if (item.length < 5) continue;
@@ -338,7 +326,7 @@
             const high = parseFloat(item[3]);
             const low = parseFloat(item[4]);
             if (isNaN(close) || isNaN(high) || isNaN(low)) continue;
-            if (close === 0) continue; // 无效数据跳过
+            if (close === 0) continue;
             records.push({
                 date: date,
                 close: close,
@@ -347,60 +335,66 @@
             });
         }
         if (records.length < 2) throw new Error('有效K线记录不足2个交易日');
-        // 按日期升序 (接口一般升序，但保险)
         records.sort((a, b) => new Date(a.date) - new Date(b.date));
         return records;
     }
 
-    // 精确四舍五入 (处理浮点误差)
     function roundDecimal(value, decimals) {
         if (isNaN(value)) return 0;
         const factor = Math.pow(10, decimals);
         return Math.round(value * factor) / factor;
     }
 
-    // 核心分析函数 (完全复现Python analyzer逻辑)
-    // 输入: klineList [{close,high,low}] , 按时间升序
-    // 输出: { highFreqResults, lowFreqResults, summary, totalDays, lastPrice }
+    // 核心分析函数 (移除原有的summary四项，新增当天最高涨幅和当天最高跌幅)
     function analyzeVolatility(klineList) {
         if (!klineList || klineList.length < 2) {
             throw new Error('交易日数量不足2天，无法计算波动');
         }
         const totalDays = klineList.length;
-        const lastPrice = klineList[klineList.length - 1].close;
+        const lastRecord = klineList[klineList.length - 1];
+        const lastPrice = lastRecord.close;
+        const lastHigh = lastRecord.high;
+        const lastLow = lastRecord.low;
         
-        // 计算每日最高相对前收盘涨幅 (hh_day) 和 最低相对前收盘跌幅 (low_day)
-        const hhDay = [];   // 正涨幅 (最高-昨收)/昨收
-        const lowDay = [];  // 负跌幅 (最低-昨收)/昨收
+        // 计算当天最高涨幅和当天最高跌幅 (基于前一日收盘价)
+        const prevClose = klineList[totalDays - 2].close;
+        let dailyHighRise = null;
+        let dailyLowFall = null;
+        if (prevClose !== 0 && !isNaN(prevClose)) {
+            dailyHighRise = ((lastHigh - prevClose) / prevClose) * 100;
+            dailyLowFall = ((lastLow - prevClose) / prevClose) * 100; // 负值，展示时取绝对值或显示负号
+        } else {
+            dailyHighRise = 0;
+            dailyLowFall = 0;
+        }
+        
+        const hhDay = [];
+        const lowDay = [];
         
         for (let i = 1; i < klineList.length; i++) {
-            const prevClose = klineList[i-1].close;
-            if (prevClose === 0 || isNaN(prevClose)) continue;
+            const prevCloseVal = klineList[i-1].close;
+            if (prevCloseVal === 0 || isNaN(prevCloseVal)) continue;
             const highToday = klineList[i].high;
             const lowToday = klineList[i].low;
-            const hh = (highToday - prevClose) / prevClose;
-            const low = (lowToday - prevClose) / prevClose;
+            const hh = (highToday - prevCloseVal) / prevCloseVal;
+            const low = (lowToday - prevCloseVal) / prevCloseVal;
             hhDay.push(hh);
             lowDay.push(low);
         }
         
         if (hhDay.length === 0) throw new Error('无法计算有效波动 (前收盘异常)');
         
-        // 高频涨幅阈值 0.1% ~ 1.0% 步长0.1% (10个)
         const highThresholds = [];
         for (let i = 1; i <= 10; i++) {
             highThresholds.push(roundDecimal(i * 0.001, 4));
         }
-        // 低频跌幅阈值 (正数) 1.0% ~ 5.5% 步长0.5% (10个)
         const lowThresholds = [];
         for (let i = 0; i < 10; i++) {
             const val = 0.01 + i * 0.005;
             lowThresholds.push(roundDecimal(val, 3));
         }
         
-        // 统计分析函数 (与原python analyze一致)
         function analyzeStat(dataArr, thresholds, totalDaysCount, negate = false) {
-            // 若negate为true, 则将原始数据取反 (因为原始lowDay为负, 取反后为正的跌幅绝对值)
             let processed = dataArr;
             if (negate) {
                 processed = dataArr.map(v => -v);
@@ -428,44 +422,37 @@
         const highFreqResults = analyzeStat(hhDay, highThresholds, totalDays, false);
         const lowFreqResults = analyzeStat(lowDay, lowThresholds, totalDays, true);
         
-        // 汇总统计
-        const maxIncrease = hhDay.length ? Math.max(...hhDay) * 100 : 0;
-        const avgIncrease = hhDay.length ? (hhDay.reduce((a,b)=>a+b,0) / hhDay.length) * 100 : 0;
-        const maxDecrease = lowDay.length ? Math.abs(Math.min(...lowDay)) * 100 : 0;
-        const avgDecrease = lowDay.length ? Math.abs(lowDay.reduce((a,b)=>a+b,0) / lowDay.length) * 100 : 0;
-        
         return {
             highFreqResults,
             lowFreqResults,
-            summary: {
-                maxIncrease: roundDecimal(maxIncrease, 2),
-                avgIncrease: roundDecimal(avgIncrease, 3),
-                maxDecrease: roundDecimal(maxDecrease, 2),
-                avgDecrease: roundDecimal(avgDecrease, 3)
-            },
             totalDays,
-            lastPrice: roundDecimal(lastPrice, 2)
+            lastPrice: roundDecimal(lastPrice, 2),
+            lastHigh: roundDecimal(lastHigh, 2),
+            lastLow: roundDecimal(lastLow, 2),
+            dailyHighRise: roundDecimal(dailyHighRise, 2),
+            dailyLowFall: roundDecimal(dailyLowFall, 2)  // 保留负值，显示时转为正数加“%”或负号
         };
     }
     
-    // 渲染UI (解决乱码名称已经正确传入)
     function renderResults(stockCode, stockName, dataRange, analysisResult) {
-        const { highFreqResults, lowFreqResults, summary, totalDays, lastPrice } = analysisResult;
+        const { highFreqResults, lowFreqResults, totalDays, lastPrice, lastHigh, lastLow, dailyHighRise, dailyLowFall } = analysisResult;
         const analysisDate = new Date().toLocaleString('zh-CN');
         
-        // 摘要区域
+        // 处理跌幅显示 (负数转为正数并加上“下跌”标识)
+        const displayLowFall = dailyLowFall < 0 ? (-dailyLowFall).toFixed(2) : dailyLowFall.toFixed(2);
+        const lowFallSign = dailyLowFall < 0 ? '-' : '+';
+        
         const summaryHtml = `
-            <div class="summary-card"><div class="label">名称</div><div class="value">${escapeHtml(stockName)}</div><div class="unit">${stockCode}</div></div>
+            <div class="summary-card"><div class="label">股票名称</div><div class="value">${escapeHtml(stockName)}</div><div class="unit">${stockCode}</div></div>
             <div class="summary-card"><div class="label">最新收盘价</div><div class="value">¥${lastPrice}</div><div class="unit">元</div></div>
+            <div class="summary-card"><div class="label">当日最高价</div><div class="value">¥${lastHigh}</div><div class="unit">元</div></div>
+            <div class="summary-card"><div class="label">当日最低价</div><div class="value">¥${lastLow}</div><div class="unit">元</div></div>
+            <div class="summary-card"><div class="label">当天最高涨幅</div><div class="value ${dailyHighRise >= 0 ? 'badge-positive' : 'badge-negative'}">${dailyHighRise >= 0 ? '+' : ''}${dailyHighRise}%</div><div class="unit">(较昨收)</div></div>
+            <div class="summary-card"><div class="label">当天最高跌幅</div><div class="value ${dailyLowFall < 0 ? 'badge-negative' : 'badge-positive'}">${lowFallSign}${displayLowFall}%</div><div class="unit">(较昨收)</div></div>
             <div class="summary-card"><div class="label">分析交易日</div><div class="value">${totalDays}</div><div class="unit">天</div></div>
-            <div class="summary-card"><div class="label">最大单日振幅涨幅</div><div class="value">${summary.maxIncrease}%</div><div class="unit">(最高/昨收)</div></div>
-            <div class="summary-card"><div class="label">平均日内涨幅潜力</div><div class="value">${summary.avgIncrease}%</div><div class="unit">(最高相对前日)</div></div>
-            <div class="summary-card"><div class="label">最大单日回撤幅度</div><div class="value">${summary.maxDecrease}%</div><div class="unit">(最低相对前日)</div></div>
-            <div class="summary-card"><div class="label">平均日内回撤幅度</div><div class="value">${summary.avgDecrease}%</div><div class="unit">(最低相对前日)</div></div>
         `;
         document.getElementById('summaryArea').innerHTML = summaryHtml;
         
-        // 高频涨幅表格
         const highTableRows = highFreqResults.map(r => `
             <tr>
                 <td>≥ ${r.threshold}%</td>
@@ -486,7 +473,6 @@
         `;
         document.getElementById('highFreqBlock').innerHTML = highFreqHtml;
         
-        // 低频跌幅表格
         const lowTableRows = lowFreqResults.map(r => `
             <tr>
                 <td>≥ ${r.threshold}%</td>
@@ -507,10 +493,9 @@
         `;
         document.getElementById('lowFreqBlock').innerHTML = lowFreqHtml;
         
-        // 更新底部数据范围
         const footerNote = document.querySelector('.footer-note');
         if (footerNote) {
-            footerNote.innerHTML = `📅 数据范围: ${dataRange} | 分析时间: ${analysisDate} | 数据源: 腾讯财经 (前复权日线) | 名称编码: UTF-8 + GBK 解码`;
+            footerNote.innerHTML = `📅 数据范围: ${dataRange} | 分析时间: ${analysisDate} | 数据源: 腾讯财经 (前复权日线) | 股票名称编码: GBK 解码`;
         }
         document.getElementById('resultContainer').style.display = 'block';
     }
@@ -522,26 +507,20 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
     
-    // 主流程: 获取信息 + K线 + 分析
     async function analyzeStock(stockInput) {
-        // 清理输入
         let rawCode = stockInput.trim();
         if (!/^\d{6}$/.test(rawCode)) {
-            throw new Error('代码必须是6位数字 (例如 600036, 000001)');
+            throw new Error('股票代码必须是6位数字 (例如 002624, 000001)');
         }
         const prefix = getMarketPrefix(rawCode);
         const fullCode = rawCode;
         
-        // 日期范围: 2026-01-01 至 当前日期 (与原Python代码 beg='20260101' 对齐)
         const startDate = '2026-01-01';
         const endDate = formatDateToYMD(new Date());
         
-        // 并行获取名称 (GBK解码避免乱码) 和 K线数据
         const namePromise = fetchStockName(prefix, fullCode);
         const klinePromise = fetchKLineData(prefix, fullCode, startDate, endDate);
         
@@ -550,7 +529,6 @@
             throw new Error('历史交易日数据不足2天，无法分析波动特征');
         }
         
-        // 执行波动分析
         const analysis = analyzeVolatility(klineRecords);
         const dataRangeStr = `${startDate} 至 ${endDate} (共${klineRecords.length}个交易日)`;
         return {
@@ -561,7 +539,6 @@
         };
     }
     
-    // 全局UI控制
     const btn = document.getElementById('analyzeBtn');
     const inputEl = document.getElementById('stockCodeInput');
     const errorDiv = document.getElementById('errorMsg');
@@ -593,18 +570,17 @@
     async function onAnalyze() {
         const code = inputEl.value.trim();
         if (!code) {
-            showError('请输入代码 (6位数字)');
+            showError('请输入股票代码 (6位数字)');
             return;
         }
         setLoading(true);
         try {
             const result = await analyzeStock(code);
-            // 渲染结果
             renderResults(result.stockCode, result.stockName, result.dataRange, result.analysisResult);
             hideError();
         } catch (err) {
             console.error(err);
-            let errMsg = err.message || '请求失败，请检查网络或代码是否正确';
+            let errMsg = err.message || '请求失败，请检查网络或股票代码是否正确';
             if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
                 errMsg = '网络错误或接口超时，请检查网络后重试。';
             } else if (errMsg.includes('K线') || errMsg.includes('未获取到')) {
@@ -622,10 +598,9 @@
         if (e.key === 'Enter') onAnalyze();
     });
     
-    // 页面加载后自动分析默认 (600036)
     window.addEventListener('load', () => {
         setTimeout(() => {
-            if (inputEl.value.trim() === '600036') {
+            if (inputEl.value.trim() === '002624') {
                 onAnalyze().catch(e => console.warn);
             }
         }, 200);
