@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>🐟 摸鱼日历 · 假期倒计时</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 让摸鱼更顺滑，不影响复制文本 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9f5e6 0%, #c8e0c2 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+            font-family: 'Segoe UI', 'Poppins', 'Noto Sans CJK SC', system-ui, -apple-system, 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 主卡片 */
+        .moyu-container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        /* 头部摸鱼氛围 */
+        .header {
+            background: #2e5e2e;
+            background-image: repeating-linear-gradient(45deg, #3c783c22 0px, #3c783c22 2px, #2b4f2b22 2px, #2b4f2b22 8px);
+            padding: 1.5rem 1.8rem 1rem;
+            text-align: center;
+            border-bottom: 3px solid #ffd966;
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff9e0;
+            text-shadow: 3px 3px 0 #3b5e1f;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 span {
+            font-size: 2rem;
+        }
+
+        .date-card {
+            background: #fef7cf;
+            margin-top: 1rem;
+            padding: 0.7rem 1rem;
+            border-radius: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-weight: 600;
+            box-shadow: inset 0 1px 3px #0001, 0 4px 8px #0001;
+        }
+
+        .today-date {
+            font-size: 1.35rem;
+            background: #2c5a2c;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            color: white;
+        }
+
+        .today-week {
+            font-size: 1.3rem;
+            color: #b45f1b;
+            background: #fff0b5;
+            padding: 0.2rem 1.2rem;
+            border-radius: 40px;
+        }
+
+        /* 倒计时巨兽区 */
+        .countdown-area {
+            padding: 1.8rem 1.5rem 1.2rem;
+            background: rgba(245, 245, 220, 0.5);
+            border-bottom: 2px dashed #c0cfb2;
+        }
+
+        .festival-name {
+            font-size: 1.9rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #3b5e1f;
+            margin-bottom: 1rem;
+        }
+
+        .timer-digits {
+            background: #2b2b1f;
+            border-radius: 2rem;
+            padding: 1.2rem 0.8rem;
+            display: flex;
+            justify-content: space-evenly;
+            text-align: center;
+            box-shadow: inset 0 2px 5px #0003, 0 10px 20px #0001;
+            margin-bottom: 1rem;
+        }
+
+        .time-block {
+            background: #1e2a1a;
+            padding: 0.6rem 0;
+            border-radius: 1.2rem;
+            width: 22%;
+            color: #f9e7a3;
+            box-shadow: 0 2px 6px black;
+        }
+
+        .time-number {
+            font-size: 2.4rem;
+            font-weight: 800;
+            font-family: monospace;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .time-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .moyu-slogan {
+            background: #fae67a;
+            text-align: center;
+            padding: 0.7rem;
+            border-radius: 3rem;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c4b1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        /* 假期一览表 */
+        .holiday-section {
+            padding: 1.6rem 1.5rem 2rem;
+        }
+
+        .holiday-title {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #2b482b;
+            border-left: 8px solid #ffb347;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .holiday-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .holiday-item {
+            background: rgba(255, 251, 225, 0.9);
+            border-radius: 2rem;
+            padding: 0.8rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e7dbaa;
+        }
+
+        .holiday-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+        }
+
+        .holiday-name span:first-child {
+            font-size: 1.5rem;
+        }
+
+        .holiday-date {
+            font-size: 0.8rem;
+            color: #7c6b3c;
+            font-weight: normal;
+            margin-left: 8px;
+        }
+
+        .holiday-status {
+            background: #d9e0b5;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2c4b1e;
+        }
+
+        .holiday-status.passed {
+            background: #cfcfc0;
+            color: #6b5e3e;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .holiday-status.soon {
+            background: #f7bc45;
+            color: #2a2c0e;
+            box-shadow: 0 0 4px #ffb347;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.7rem;
+            color: #5e6b4a;
+            background: #e2e9d9;
+            border-top: 1px solid #cbdbb5;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0.8rem;
+            }
+            .time-number {
+                font-size: 1.5rem;
+            }
+            .festival-name {
+                font-size: 1.4rem;
+            }
+            .holiday-name {
+                font-size: 1rem;
+            }
+            .today-date {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="moyu-container">
+    <div class="header">
+        <h1>
+            <span>🐟</span> 摸鱼日历 <span>☕</span>
+        </h1>
+        <div class="date-card">
+            <div class="today-date" id="fullDate"></div>
+            <div class="today-week" id="weekday"></div>
+        </div>
+    </div>
+
+    <div class="countdown-area">
+        <div class="festival-name">
+            🎏 距离劳动节 · 躺平倒计时 🛌
+        </div>
+        <div class="timer-digits">
+            <div class="time-block">
+                <div class="time-number" id="days">00</div>
+                <div class="time-label">天</div>
+            </div>
+            <div class="time-block">
+                <div class="time-number" id="hours">00</div>
+                <div class="time-label">时</div>
+            </div>
+            <div class="time-block">
+                <div class="time-number" id="minutes">00</div>
+                <div class="time-label">分</div>
+            </div>
+            <div class="time-block">
+                <div class="time-number" id="seconds">00</div>
+                <div class="time-label">秒</div>
+            </div>
+        </div>
+        <div class="moyu-slogan" id="sloganText">
+            🧘 还有 -- 天，慢慢摸吧~ 🧘
+        </div>
+    </div>
+
+    <div class="holiday-section">
+        <div class="holiday-title">
+            📅 2026 假期一览 🗓️
+        </div>
+        <div class="holiday-grid" id="holidayList">
+            <!-- 动态js渲染 -->
+        </div>
+    </div>
+    <footer>
+        🐢 摸鱼大法好 · 假期在招手 🐢
+    </footer>
+</div>
+
+<script>
+    // ---------- 2026 固定假期数据 ----------
+    const HOLIDAYS_2026 = [
+        { name: "元旦", dateStr: "2026-01-01", emoji: "🎆" },
+        { name: "春节", dateStr: "2026-01-29", emoji: "🧧" },
+        { name: "清明节", dateStr: "2026-04-05", emoji: "🌿" },
+        { name: "劳动节", dateStr: "2026-05-01", emoji: "🛠️" },
+        { name: "端午节", dateStr: "2026-05-31", emoji: "🐲" },
+        { name: "中秋节", dateStr: "2026-09-25", emoji: "🌕" },
+        { name: "国庆节", dateStr: "2026-10-01", emoji: "🇨🇳" }
+    ];
+
+    // 辅助: 将 "YYYY-MM-DD" 转本地日期对象 (避免时区偏移)
+    function parseLocalDate(dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    // 获取当前日期 (本地0点)
+    function getCurrentLocalMidnight() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    }
+
+    // 计算两个日期之间的整天数差 (忽略时分秒, target - current)
+    function getDaysDiff(targetDate, currentDate) {
+        const diffTime = targetDate - currentDate;
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // 获取下一个劳动节 (基于当前实时时间, 目标当天00:00:00)
+    function getNextLaborDay() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        // 今年劳动节 5月1日 00:00:00
+        let laborDay = new Date(currentYear, 4, 1, 0, 0, 0, 0);
+        if (now > laborDay) {
+            // 如果已经过了今年的劳动节，取下一年
+            laborDay = new Date(currentYear + 1, 4, 1, 0, 0, 0, 0);
+        }
+        return laborDay;
+    }
+
+    // 格式化数字两位
+    function formatTwoDigit(num) {
+        return num < 10 ? '0' + num : '' + num;
+    }
+
+    // 更新倒计时: 距离下一个劳动节精确剩余 (天/时/分/秒)
+    function updateCountdown() {
+        const now = new Date();
+        const targetLabor = getNextLaborDay();
+        const diffMs = targetLabor - now;
+
+        let remainingSec = Math.floor(diffMs / 1000);
+        let days = 0, hours = 0, minutes = 0, seconds = 0;
+
+        if (remainingSec > 0) {
+            days = Math.floor(remainingSec / 86400);
+            remainingSec %= 86400;
+            hours = Math.floor(remainingSec / 3600);
+            remainingSec %= 3600;
+            minutes = Math.floor(remainingSec / 60);
+            seconds = remainingSec % 60;
+        } else {
+            // 已过的情况：显示0，理论上不会到负数，因为getNextLaborDay返回将来，但微妙边界处理
+            days = 0; hours = 0; minutes = 0; seconds = 0;
+        }
+
+        // 更新DOM
+        document.getElementById('days').innerText = formatTwoDigit(days);
+        document.getElementById('hours').innerText = formatTwoDigit(hours);
+        document.getElementById('minutes').innerText = formatTwoDigit(minutes);
+        document.getElementById('seconds').innerText = formatTwoDigit(seconds);
+
+        // 摸鱼文案: 显示剩余总天数 (向下取整，和倒计时天数一致)
+        const sloganDays = days;
+        const sloganElement = document.getElementById('sloganText');
+        if (sloganDays > 0) {
+            sloganElement.innerHTML = `🧘 还有 ${sloganDays} 天，慢慢摸吧~ 🧘`;
+        } else if (sloganDays === 0 && (hours > 0 || minutes > 0 || seconds > 0)) {
+            sloganElement.innerHTML = `🧘 今天就是劳动节！赶紧摸大鱼 🧘`;
+        } else {
+            sloganElement.innerHTML = `🧘 劳动节已过？摸摸鱼等明年~ 🧘`;
+        }
+    }
+
+    // 更新假期列表 (基于实时日期，显示距离2026每个节日的剩余整天数 或 "已过")
+    function updateHolidayList() {
+        const now = new Date();               // 当前精确时间
+        const todayMidnight = getCurrentLocalMidnight(); // 今日0点
+
+        const container = document.getElementById('holidayList');
+        if (!container) return;
+
+        let html = '';
+
+        HOLIDAYS_2026.forEach(holiday => {
+            const targetDate = parseLocalDate(holiday.dateStr);
+            const diffDays = getDaysDiff(targetDate, todayMidnight);
+            let statusText = '';
+            let statusClass = '';
+
+            // 判断是否已过: 如果目标日期0点 < 今日0点，表示节日已过
+            if (targetDate < todayMidnight) {
+                statusText = '✓ 已过';
+                statusClass = 'passed';
+            } else if (diffDays === 0) {
+                statusText = '✨ 就是今天 ✨';
+                statusClass = 'soon';
+            } else {
+                statusText = `⏳ ${diffDays} 天`;
+                statusClass = 'soon';
+            }
+
+            // 额外格式化日期显示 (MM-dd)
+            const dateObj = targetDate;
+            const month = dateObj.getMonth() + 1;
+            const day = dateObj.getDate();
+            const shortDate = `${month}.${day}`;
+
+            html += `
+                <div class="holiday-item">
+                    <div class="holiday-name">
+                        <span>${holiday.emoji}</span>
+                        <span>${holiday.name}</span>
+                        <span class="holiday-date">(${shortDate})</span>
+                    </div>
+                    <div class="holiday-status ${statusClass}">${statusText}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // 更新今日日期 & 星期 (中文格式)
+    function updateDateAndWeek() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+        const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const weekday = weekdays[now.getDay()];
+
+        document.getElementById('fullDate').innerHTML = `${year}年${month}月${day}日`;
+        document.getElementById('weekday').innerHTML = `${weekday}`;
+    }
+
+    // 全局刷新：更新倒计时 + 假期列表 + 日期星期（所有动态数据）
+    function refreshAll() {
+        updateDateAndWeek();      // 日期星期实时
+        updateCountdown();        // 劳动节倒计时 + 摸鱼文案
+        updateHolidayList();      // 假期剩余天数/状态
+    }
+
+    // 额外每秒刷新倒计时，同时假期列表每天跨天时自动变化 (每秒刷新不会影响性能)
+    let timerInterval = null;
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            refreshAll();
+        }, 1000);
+    }
+
+    // 页面初始化立即执行，并启动计时器
+    refreshAll();
+    startTimer();
+
+    // 可选：监听页面可见性变化，避免后台频繁刷新（节省资源，但无伤大雅）
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+        } else {
+            if (!timerInterval) {
+                refreshAll(); // 立即同步最新
+                startTimer();
+            }
+        }
+    });
+
+    // 触摸优化 & 彩蛋控制台摸鱼警告
+    console.log("%c🐟 摸鱼时间！今天也要快乐等假期 🐟", "color: #4c8b2b; font-size: 16px; font-weight: bold;");
+</script>
+</body>
+</html>
