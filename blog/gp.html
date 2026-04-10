@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>股票行情速览 - 实时指标与波动概览</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f0f2f5 0%, #e9ecef 100%);
+            margin: 0;
+            padding: 24px 16px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 6px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .header {
+            background: #1e2a3e;
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            margin: 0.5rem 0 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        .search-panel {
+            padding: 1.8rem 2rem;
+            background: white;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .input-field {
+            flex: 2;
+            min-width: 200px;
+        }
+        .input-field label {
+            display: block;
+            font-weight: 600;
+            color: #1e2a3e;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+        }
+        .input-field input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 1rem;
+            font-size: 1rem;
+            transition: 0.2s;
+            background: #fefefe;
+        }
+        .input-field input:focus {
+            outline: none;
+            border-color: #2c6e9e;
+            box-shadow: 0 0 0 3px rgba(44,110,158,0.2);
+        }
+        button {
+            background: #2c6e9e;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        button:hover {
+            background: #1f557d;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error-banner {
+            margin-top: 1rem;
+            background: #fee2e2;
+            border-left: 5px solid #dc2626;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1rem;
+            color: #b91c1c;
+            font-weight: 500;
+            display: none;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 2rem;
+            color: #2c6e9e;
+        }
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #2c6e9e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .result-section {
+            padding: 1.5rem 2rem 2rem;
+            display: none;
+        }
+        .stock-summary {
+            background: #f8fafc;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 1rem;
+            border: 1px solid #e2edf2;
+        }
+        .summary-card {
+            flex: 1;
+            min-width: 120px;
+        }
+        .summary-card .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #475569;
+            letter-spacing: 0.5px;
+        }
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .summary-card .unit {
+            font-size: 0.8rem;
+            color: #5b6e8c;
+        }
+        .badge-positive {
+            color: #10b981;
+        }
+        .badge-negative {
+            color: #ef4444;
+        }
+        .info-note {
+            background: #f1f5f9;
+            border-radius: 1.25rem;
+            padding: 1rem 1.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #334155;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .footer-note {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 1rem;
+            color: #6c757d;
+            border-top: 1px solid #eef2f6;
+            margin-top: 1.5rem;
+        }
+        @media (max-width: 680px) {
+            .search-panel, .result-section {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .stock-summary {
+                flex-direction: column;
+            }
+            .summary-card .value {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📊 股票行情速览</h1>
+        <p>最新行情 · 日间波动指标 · 基于真实历史日线数据</p>
+    </div>
+    <div class="search-panel">
+        <div class="input-group">
+            <div class="input-field">
+                <label>🔍 股票代码 (沪/深A股)</label>
+                <input type="text" id="stockCodeInput" placeholder="例如: 600036 或 000001" value="600036" autocomplete="off">
+            </div>
+            <button id="analyzeBtn">📈 查询行情</button>
+        </div>
+        <div id="errorMsg" class="error-banner"></div>
+    </div>
+
+    <div id="loadingIndicator" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <span>正在获取股票数据，请稍后...</span>
+    </div>
+
+    <div id="resultContainer" class="result-section">
+        <div id="summaryArea" class="stock-summary"></div>
+        <div class="info-note">
+            💡 以下指标基于历史日线数据计算：<br>
+            • <strong>当天最高涨幅</strong> = (当日最高价 - 前日收盘价) / 前日收盘价 × 100%<br>
+            • <strong>当天最高跌幅</strong> = (当日最低价 - 前日收盘价) / 前日收盘价 × 100% (负值代表下跌)<br>
+            • <strong>当天收盘涨幅</strong> = (当日收盘价 - 前日收盘价) / 前日收盘价 × 100%<br>
+            • 所有涨跌幅均基于最近一个交易日与前日比较。
+        </div>
+        <div class="footer-note">⚠️ 数据基于前复权日线，数据源：腾讯财经。统计区间为近两年至最新交易日。</div>
+    </div>
+</div>
+
+<script>
+    // ---------- 工具函数 ----------
+    function formatDateToYMD(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    // 根据代码推断市场前缀 (沪市: sh, 深市: sz)
+    function getMarketPrefix(code) {
+        const strCode = String(code).trim();
+        // 上海: 6开头, 9开头(B股), 688(科创板)
+        if (strCode.startsWith('6') || strCode.startsWith('9') || strCode.startsWith('688')) {
+            return 'sh';
+        } else if (strCode.startsWith('0') || strCode.startsWith('3') || strCode.startsWith('2')) {
+            return 'sz';
+        }
+        // 默认深市
+        return 'sz';
+    }
+
+    // 使用GBK解码解决乱码问题 (腾讯qt接口返回GBK编码)
+    async function fetchStockName(prefix, code) {
+        const symbol = prefix + code;
+        const url = `https://qt.gtimg.cn/q=${symbol}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`名称接口HTTP ${response.status}`);
+            const buffer = await response.arrayBuffer();
+            const decoder = new TextDecoder('gbk');
+            const text = decoder.decode(buffer);
+            const match = text.match(/="[^"]*?~([^~]+)~/);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+            const fallbackMatch = text.match(/~([^~]+)~/);
+            return fallbackMatch ? fallbackMatch[1].trim() : code;
+        } catch (err) {
+            console.warn("获取名称失败", err);
+            return code;
+        }
+    }
+
+    // 获取历史K线 (腾讯日K, 前复权, 返回JSON为UTF-8)
+    // 开始日期动态设置为2年前，确保有足够数据且避免未来空数据
+    async function fetchKLineData(prefix, code, startDate, endDate) {
+        const symbol = prefix + code;
+        const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${symbol},day,${startDate},${endDate},640,qt`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`K线接口失败 ${resp.status}`);
+        const json = await resp.json();
+        if (json.code !== 0 || !json.data || !json.data[symbol]) {
+            throw new Error('未获取到K线数据，请检查代码或日期范围');
+        }
+        const dayArr = json.data[symbol].day;
+        if (!dayArr || dayArr.length === 0) throw new Error('该时间段无日线数据');
+        const records = [];
+        for (const item of dayArr) {
+            if (item.length < 5) continue;
+            const date = item[0];
+            const close = parseFloat(item[2]);
+            const high = parseFloat(item[3]);
+            const low = parseFloat(item[4]);
+            if (isNaN(close) || isNaN(high) || isNaN(low)) continue;
+            if (close === 0) continue;
+            records.push({
+                date: date,
+                close: close,
+                high: high,
+                low: low
+            });
+        }
+        if (records.length < 2) throw new Error('有效K线记录不足2个交易日');
+        records.sort((a, b) => new Date(a.date) - new Date(b.date));
+        return records;
+    }
+
+    function roundDecimal(value, decimals) {
+        if (isNaN(value)) return 0;
+        const factor = Math.pow(10, decimals);
+        return Math.round(value * factor) / factor;
+    }
+
+    // 精简版分析函数：只提取基本行情指标，移除所有高频/低频波动率统计
+    function analyzeBasicMetrics(klineList) {
+        if (!klineList || klineList.length < 2) {
+            throw new Error('交易日数量不足2天，无法计算指标');
+        }
+        const totalDays = klineList.length;
+        const lastRecord = klineList[totalDays - 1];
+        const lastPrice = lastRecord.close;
+        const lastHigh = lastRecord.high;
+        const lastLow = lastRecord.low;
+        
+        // 基于前一日收盘价计算当天波动指标
+        const prevClose = klineList[totalDays - 2].close;
+        let dailyHighRise = 0;
+        let dailyLowFall = 0;
+        let dailyCloseRise = 0;
+        if (prevClose !== 0 && !isNaN(prevClose)) {
+            dailyHighRise = ((lastHigh - prevClose) / prevClose) * 100;
+            dailyLowFall = ((lastLow - prevClose) / prevClose) * 100; // 负值表示下跌幅度
+            dailyCloseRise = ((lastPrice - prevClose) / prevClose) * 100;
+        }
+        
+        return {
+            totalDays: totalDays,
+            lastPrice: roundDecimal(lastPrice, 2),
+            lastHigh: roundDecimal(lastHigh, 2),
+            lastLow: roundDecimal(lastLow, 2),
+            dailyHighRise: roundDecimal(dailyHighRise, 2),
+            dailyLowFall: roundDecimal(dailyLowFall, 2),
+            dailyCloseRise: roundDecimal(dailyCloseRise, 2)
+        };
+    }
+    
+    // 渲染仅包含基础行情卡片，已完全移除高频涨幅 / 低频跌幅表格
+    function renderResults(stockCode, stockName, dataRange, metrics) {
+        const { totalDays, lastPrice, lastHigh, lastLow, dailyHighRise, dailyLowFall, dailyCloseRise } = metrics;
+        const analysisDate = new Date().toLocaleString('zh-CN');
+        
+        // 处理跌幅显示 (负数转为正数并加上“下跌”标识)
+        const displayLowFall = dailyLowFall < 0 ? (-dailyLowFall).toFixed(2) : dailyLowFall.toFixed(2);
+        const lowFallSign = dailyLowFall < 0 ? '-' : '+';
+        const displayCloseRise = dailyCloseRise >= 0 ? `+${dailyCloseRise.toFixed(2)}` : `${dailyCloseRise.toFixed(2)}`;
+        
+        const summaryHtml = `
+            <div class="summary-card"><div class="label">股票名称</div><div class="value">${escapeHtml(stockName)}</div><div class="unit">${stockCode}</div></div>
+            <div class="summary-card"><div class="label">最新收盘价</div><div class="value">¥${lastPrice}</div><div class="unit">元</div></div>
+            <div class="summary-card"><div class="label">当日最高价</div><div class="value">¥${lastHigh}</div><div class="unit">元</div></div>
+            <div class="summary-card"><div class="label">当日最低价</div><div class="value">¥${lastLow}</div><div class="unit">元</div></div>
+            <div class="summary-card"><div class="label">当天最高涨幅</div><div class="value ${dailyHighRise >= 0 ? 'badge-positive' : 'badge-negative'}">${dailyHighRise >= 0 ? '+' : ''}${dailyHighRise}%</div><div class="unit">(较昨收)</div></div>
+            <div class="summary-card"><div class="label">当天最高跌幅</div><div class="value ${dailyLowFall < 0 ? 'badge-negative' : 'badge-positive'}">${lowFallSign}${displayLowFall}%</div><div class="unit">(较昨收)</div></div>
+            <div class="summary-card"><div class="label">当天收盘涨幅</div><div class="value ${dailyCloseRise >= 0 ? 'badge-positive' : 'badge-negative'}">${displayCloseRise}%</div><div class="unit">(较昨收)</div></div>
+            <div class="summary-card"><div class="label">分析交易日</div><div class="value">${totalDays}</div><div class="unit">天</div></div>
+        `;
+        document.getElementById('summaryArea').innerHTML = summaryHtml;
+        
+        // 更新页脚附加信息，清晰展示数据范围
+        const footerNote = document.querySelector('.footer-note');
+        if (footerNote) {
+            footerNote.innerHTML = `📅 数据范围: ${dataRange} | 分析时间: ${analysisDate} | 数据源: 腾讯财经 (前复权日线) | 仅展示基础行情，无高频/低频统计`;
+        }
+        document.getElementById('resultContainer').style.display = 'block';
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // 获取动态日期区间 (近两年数据，保证数据量)
+    function getDynamicDateRange() {
+        const endDate = new Date();
+        const startDateObj = new Date();
+        startDateObj.setFullYear(endDate.getFullYear() - 2);
+        const startDate = formatDateToYMD(startDateObj);
+        const endDateStr = formatDateToYMD(endDate);
+        return { startDate, endDateStr };
+    }
+    
+    async function analyzeStock(stockInput) {
+        let rawCode = stockInput.trim();
+        if (!/^\d{6}$/.test(rawCode)) {
+            throw new Error('股票代码必须是6位数字 (例如 600036, 000001)');
+        }
+        const prefix = getMarketPrefix(rawCode);
+        const fullCode = rawCode;
+        
+        // 动态时间范围（近两年）
+        const { startDate, endDateStr } = getDynamicDateRange();
+        
+        const namePromise = fetchStockName(prefix, fullCode);
+        const klinePromise = fetchKLineData(prefix, fullCode, startDate, endDateStr);
+        
+        const [stockName, klineRecords] = await Promise.all([namePromise, klinePromise]);
+        if (!klineRecords || klineRecords.length < 2) {
+            throw new Error('历史交易日数据不足2天，无法分析波动特征');
+        }
+        
+        const metrics = analyzeBasicMetrics(klineRecords);
+        const dataRangeStr = `${startDate} 至 ${endDateStr} (共${klineRecords.length}个交易日)`;
+        return {
+            stockCode: fullCode,
+            stockName: stockName,
+            dataRange: dataRangeStr,
+            metrics: metrics
+        };
+    }
+    
+    const btn = document.getElementById('analyzeBtn');
+    const inputEl = document.getElementById('stockCodeInput');
+    const errorDiv = document.getElementById('errorMsg');
+    const loadingDiv = document.getElementById('loadingIndicator');
+    const resultContainer = document.getElementById('resultContainer');
+    
+    function hideError() {
+        errorDiv.style.display = 'none';
+        errorDiv.innerHTML = '';
+    }
+    function showError(msg) {
+        errorDiv.innerHTML = `⚠️ ${escapeHtml(msg)}`;
+        errorDiv.style.display = 'block';
+        resultContainer.style.display = 'none';
+    }
+    
+    function setLoading(isLoading) {
+        if (isLoading) {
+            btn.disabled = true;
+            loadingDiv.style.display = 'flex';
+            resultContainer.style.display = 'none';
+            hideError();
+        } else {
+            btn.disabled = false;
+            loadingDiv.style.display = 'none';
+        }
+    }
+    
+    async function onAnalyze() {
+        const code = inputEl.value.trim();
+        if (!code) {
+            showError('请输入股票代码 (6位数字)');
+            return;
+        }
+        setLoading(true);
+        try {
+            const result = await analyzeStock(code);
+            renderResults(result.stockCode, result.stockName, result.dataRange, result.metrics);
+            hideError();
+        } catch (err) {
+            console.error(err);
+            let errMsg = err.message || '请求失败，请检查网络或股票代码是否正确';
+            if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+                errMsg = '网络错误或接口超时，请检查网络后重试。';
+            } else if (errMsg.includes('K线') || errMsg.includes('未获取到')) {
+                errMsg = '未获取到K线数据，可能代码不存在或该时段无交易数据。';
+            }
+            showError(errMsg);
+            resultContainer.style.display = 'none';
+        } finally {
+            setLoading(false);
+        }
+    }
+    
+    btn.addEventListener('click', onAnalyze);
+    inputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') onAnalyze();
+    });
+    
+    // 页面加载后自动查询默认股票 (600036)
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            if (inputEl.value.trim() === '600036') {
+                onAnalyze().catch(e => console.warn);
+            }
+        }, 200);
+    });
+</script>
+</body>
+</html>
